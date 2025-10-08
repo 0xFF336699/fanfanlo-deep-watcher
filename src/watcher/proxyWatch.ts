@@ -1,7 +1,5 @@
 import _ from 'lodash';
 import { createThrottle, Dispatcher, DispatcherUnsubscribe, IDispatcher, listenAnyWildcard } from '../dispatcher';
-// import { Log } from '../log';
-// import { objectCountUtils } from '../utils';
 import { proxyUtils } from './proxyUtils';
 
 // 设计目的是通过代理能够进行拦截的特性，利用这个特性来派发事件，从而实现对对象的监听。
@@ -83,8 +81,6 @@ export const ProxyArrayStringTag = 'ProxyArray';
  */
 
 function arrayHandler<T extends Array<any>>(target: T, dispatcher: IDispatcher) {
-  // const originalTarget = getProxyTarget(target)
-  // (target as any)[Symbol.toStringTag] = ProxyArrayStringTag
   const t = target as Array<any>;
   // 检查处理可能变更的数据
   function dispatchChange(start: number, end: number, oldTarget: Array<any>) {
@@ -141,20 +137,13 @@ function arrayHandler<T extends Array<any>>(target: T, dispatcher: IDispatcher) 
           let v = Reflect.get(target, prop, receiver);
 
           if (typeof v === 'function') {
-            // v = (v as any).bind(proxyUtils.isPauseProxy ? toProxy(target) : target);
-            // const isProxied = !!isProxy(this)
-            // console.log('call function', isProxied, v)
             return v;
           }
           if (_.isObject(v) && !proxyUtils.isPauseProxy) return getProxyObject(v).proxy;
           return v;
       }
     },
-    // ownKeys(target){
-    //     return [...Reflect.ownKeys(target), proxyWatchSymbolKey]
-    // },
     set(target, prop, v, receiver) {
-      // console.log('ssssssssssset look look id', objectCountUtils.getObjectCount(t), prop, v)
       const as = unshellProxies([v])
       const value = as[0]
       let oldLength: number = 0;
@@ -203,13 +192,10 @@ function objectHandler<T extends object>(target: T, dispatcher: IDispatcher, eve
   // (target as any)[Symbol.toStringTag] = ProxyObjectStringTag
   function checkDispatchEventMap(prop: string | Symbol, now: T[keyof T] | undefined, old: T[keyof T] | undefined) {
     if (eventMap && eventMap[prop as keyof T]) {
-      // console.log('ddddddddddddddispatch from eventmap', prop, now, old, target)
       dispatcher.dispatch((eventMap as any)[prop as any], now, old, target);
     } else {
-      // console.log('ddddddddddddddispatch from prop', prop, now, old, target)
       dispatcher.dispatch(prop, now, old, target);
     }
-    // console.log('ddddddddddddddispatch listenAnyWildcard', prop, now, old, target)
     dispatcher.dispatch(listenAnyWildcard, prop, now, old, target);
   }
   const handler: ProxyHandler<T> = {
@@ -227,12 +213,6 @@ function objectHandler<T extends object>(target: T, dispatcher: IDispatcher, eve
       }
       let v = Reflect.get(target, prop, receiver);
       if (typeof v === 'function') {
-        // if (prop === 'toString') {
-        //   v = function () {
-        //     return 'i proxy watch object';
-        //   } as any;
-        // }
-        // v = (v as any).bind(target);
         return v;
       }
       if (_.isObject(v) && !proxyUtils.isPauseProxy) return getProxyObject(v).proxy;
@@ -250,8 +230,7 @@ function objectHandler<T extends object>(target: T, dispatcher: IDispatcher, eve
   };
   return handler;
 }
-// const testProxyKeyMap = new Map<any, any>()
-// const testTargetKeyMap = new Map<any, any>()
+
 /**
  * 获取或生成代理对象，它能够在属性变更时派发事件通知侦听函数该属性已经变更。
  * @param target 要被代理的对象
@@ -270,11 +249,11 @@ export function getProxyObject<T extends object>(
     console.trace('getProxyObject target is not object', t);
     throw new Error('getProxyObject target is not object');
   }
-  if (_.isFunction(t)) {
-    // console.log('getProxyObject_fn target is a function', t);
-    // console.trace('getProxyObject target is function', t);
-    // throw new Error('getProxyObject target is function');
-  }
+  // if (_.isFunction(t)) {
+  //   // console.log('getProxyObject_fn target is a function', t);
+  //   // console.trace('getProxyObject target is function', t);
+  //   // throw new Error('getProxyObject target is function');
+  // }
   const target = getProxyWatchRealTarget(t);
   if (proxyMap.has(target)) {
     console.log('poroxy map has target', proxyMap.get(target));
@@ -283,10 +262,7 @@ export function getProxyObject<T extends object>(
   const ts = ('toString' in target)?target.toString() :'';
   if (ts.indexOf('i proxy watch') > -1) {
     console.log('eerror proxy watch ts, target', typeof target, ts, target);
-        // console.log('eerror proxy watch proxymap', objectCountUtils.getObjectCount(target), proxyMap.get(target));
     console.log('eerror proxy watch objectmap', objectMap.get(target));
-    // console.log('try to get real proxy', testProxyKeyMap.get(target));
-    // console.log('try to get real target2', testTargetKeyMap.get(target));
     console.log('try to get symbol target', (target as any)[proxyWatchSymbolKey]);
     console.log('try to get symbol target2', (t as any)[proxyWatchSymbolKey]);
     console.trace('eerror proxy watch target');
@@ -294,7 +270,6 @@ export function getProxyObject<T extends object>(
   }
   let proxyObject = (objectMap.get(target) || proxyMap.get(target)) as IProxyObject<T>;
   if (proxyObject) return proxyObject;
-  // target[Symbol.toStringTag] = _.isArray(target) ? ProxyArrayStringTag : ProxyObjectStringTag
   dispatcher = dispatcher || new Dispatcher();
 
   const handler = _.isArray(target) ? arrayHandler(target, dispatcher) : objectHandler(target, dispatcher, eventMap);
@@ -303,8 +278,6 @@ export function getProxyObject<T extends object>(
   const proxy = new Proxy(target, handler);
     const targetId = 0 // objectCountUtils.getObjectCount(target)
   const proxyId = 0 // objectCountUtils.setObjectCount(proxy, `proxy-${targetId}`, 'proxy-id')
-  // testProxyKeyMap.set(proxy, target)
-  // testTargetKeyMap.set(target, proxy)
   proxyObject = {
     target,
     proxy,
@@ -314,29 +287,18 @@ export function getProxyObject<T extends object>(
     proxyId,
   };
 
-    // console.log('create new porxy33333', proxyObject.targetId, proxyObject.proxyId, proxyObject);
-  //   console.log('ts =', ts)
   objectMap.set(target, proxyObject);
   proxyMap.set(proxy, proxyObject);
   return proxyObject;
 }
 
-// export function getProxyWatchRealTarget<T>(target: T): T {
-//   proxyUtils.pauseProxy();
 export function getProxyWatchRealTarget<T>(target: T): T {
   proxyUtils.pauseProxy();
-  // console.log('getProxyWatchRealTarget isProxy(target)', objectCountUtils.getObjectCount(target), isProxy(target));
   let t = isProxy(target)?.target || target;
-  // console.log('getProxyWatchRealTarget t', objectCountUtils.getObjectCount(t), t, isProxy(t));
-  // console.log('getProxyWatchRealTarget isProxy(t)', isProxy(t));
   let c = 0;
   while (t && isProxy(t)) {
-    // console.log('unshell getRealTarget a', c, t);
     c++;
     if (c > 5) break;
-    if (c > 2) {
-      // console.log('unshell getRealTarget b', c, t);
-    }
     t = isProxy(t)?.target;
   }
   proxyUtils.resumeProxy();
@@ -388,10 +350,6 @@ export function proxyWatch<T extends object, U>(
   }
   function _onUpdate(now: U, old?: U){
     const proxiedNow = _.get(target, propertyChain) as U;
-    // console.log('proxiedNow=', propertyChain, proxiedNow);
-    // if(_.isObject(proxiedNow)){
-    //     console.log('proxynow id=', objectCountUtils.getObjectCount(proxiedNow))
-    // }
     onUpdate(proxiedNow, old);
   }
   const propertyWatchResult = watchProperty(target, propertyChain, _onUpdate, onUndefined);
@@ -489,8 +447,6 @@ function unshellProxies(list:any[]){
           (t as any)[key] = getProxyWatchRealTarget(v);
         }
       }
-      // 原先是这样修改的，但是会对只读属性抛错。现在修改为上面代码了但是不知道是否有隐藏问题。
-      // (t as any)[key] = unshellProxies([(t as any)[key]])[0];
     }
     return t
   })

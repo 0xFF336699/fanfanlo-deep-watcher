@@ -1,246 +1,397 @@
-import React, { useState, useEffect } from 'react';
-import { proxyWatch, useProxyWatch } from 'deep-watcher';
+import React, { useState } from 'react';
+import { useProxyWatch, toProxy } from 'fanfanlo-deep-watcher';
 import './App.css';
 
-// Define types for our example
-type User = {
-  id: number;
-  name: string;
-  details: {
-    email: string;
-    address: {
-      city: string;
-      country: string;
-    };
-  };
-  preferences?: {
-    theme: 'light' | 'dark';
-    notifications: boolean;
-  };
-};
+// 代码块组件
+const CodeBlock: React.FC<{ code: string }> = ({ code }) => (
+  <details style={{ margin: '10px 0', cursor: 'pointer' }}>
+    <summary>查看代码</summary>
+    <pre style={{
+      background: '#f5f5f5',
+      padding: '10px',
+      borderRadius: '4px',
+      overflowX: 'auto',
+      marginTop: '10px'
+    }}>
+      <code>{code}</code>
+    </pre>
+  </details>
+);
 
-type Todo = {
-  id: number;
-  text: string;
-  completed: boolean;
-};
+// 定义响应式数组类型
+interface ReactiveArray<T> {
+  items: T[];
+  newItem: string;
+}
 
-const App: React.FC = () => {
-  // Example 1: Basic object property watch with React state
-  const [user, setUser] = useState<User>({
-    id: 1,
-    name: 'John Doe',
-    details: {
-      email: 'john@example.com',
-      address: {
-        city: 'New York',
-        country: 'USA'
-      }
+// 创建多层嵌套的响应式对象
+const nestedObj = toProxy({
+  a: {
+    b: {
+      c: 3
     }
-  });
+  }
+});
 
-  // Example 2: Array operations with React state
-  const [todos, setTodos] = useState<Todo[]>([
-    { id: 1, text: 'Learn React', completed: false },
-    { id: 2, text: 'Master TypeScript', completed: false },
-  ]);
+// 创建响应式计数器对象
+const counter = toProxy({ count: 0 });
 
-  // Example 3: Using the useProxyWatch hook
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [themeLog, setThemeLog] = useState<string[]>([]);
+/**
+ * 演示：监听对象属性变化
+ */
+function CounterExample() {
+  const [count] = useProxyWatch(counter, 'count', counter.count);
 
-  // Example 4: Watching nested properties
-  const [formData, setFormData] = useState({
-    personal: {
-      firstName: '',
-      lastName: '',
-    },
-    contact: {
-      email: '',
-      phone: '',
-    },
-  });
+  const exampleCode = `
+  
+const counter = toProxy({ count: 0 });
+function CounterExample() {
+  const [count] = useProxyWatch(counter, 'count', counter.count);
 
-  // Example 1: Watch for changes to user's city
-  useEffect(() => {
-    const { unwatch } = proxyWatch(
-      user,
-      'details.address.city',
-      (newCity:string, oldCity?:string) => {
-        console.log(`City changed from "${oldCity}" to "${newCity}"`);
-      }
-    );
+  return (
+    <div>
+      <div>当前计数: {count}</div>
+      <button onClick={() => counter.count++}>增加</button>
+      <button onClick={() => counter.count--}>减少</button>
+    </div>
+  );
+}`;
 
-    return () => unwatch();
-  }, [user]);
+  return (
+    <div className="example">
+      <h3>1. 基础计数器</h3>
+      <div className="description">
+        这个示例展示了如何使用 toProxy 创建响应式计数器状态，并通过 useProxyWatch 监听状态变化。
+        点击按钮可以增加或减少计数，界面会自动更新。
+      </div>
+      <CodeBlock code={exampleCode} />
+      <div>当前计数: {count}</div>
+      <div style={{ marginTop: '10px' }}>
+        <button 
+          onClick={() => counter.count++} 
+          style={{ marginRight: '10px' }}
+        >
+          增加
+        </button>
+        <button onClick={() => counter.count--}>减少</button>
+      </div>
+    </div>
+  );
+}
 
-  // Example 2: Watch for changes to todos array
-  useEffect(() => {
-    const { unwatch } = proxyWatch(
-      todos,
-      'length',
-      (newLength:number, oldLength?:number) => {
-        console.log(`Todo list length changed from ${oldLength} to ${newLength}`);
-      }
-    );
+/**
+ * 演示：监听数组变化
+ */
+function TodoExample() {
+  // 创建响应式数组
+  const todoList = React.useMemo(() => toProxy({
+    todos: [
+      { id: 1, text: '学习 React', completed: false },
+      { id: 2, text: '学习 TypeScript', completed: true },
+      { id: 3, text: '学习 Deep Watcher', completed: false }
+    ],
+    newTodo: ''
+  }), []);
 
-    return () => unwatch();
-  }, [todos]);
-
-  // Example 3: Using useProxyWatch hook
-  const [themeValue] = useProxyWatch(
-    { theme },
-    'theme',
-    theme
+  // 监听数组变化
+  const [todos] = useProxyWatch(todoList, 'todos', todoList.todos);
+  const [newTodo] = useProxyWatch(todoList, 'newTodo', todoList.newTodo);
+  const [completedCount] = useProxyWatch(
+    todoList, 
+    'todos', 
+    todoList.todos.filter(todo => todo.completed).length
   );
 
-  // Example 4: Watching form data with debouncing
-  const [formLog, setFormLog] = useState<string[]>([]);
-  
-  useEffect(() => {
-    const { unwatch } = proxyWatch(
-      formData,
-      'personal.firstName',
-      (newValue:string, oldValue?:string) => {
-        const message = `First name changed to: ${newValue}`;
-        setFormLog(prev => [message, ...prev].slice(0, 5));
-      }
-    );
-
-    return () => unwatch();
-  }, [formData]);
-
-  // Handler functions
-  const updateUserCity = () => {
-    const cities = ['Tokyo', 'London', 'Paris', 'Sydney', 'Berlin'];
-    const randomCity = cities[Math.floor(Math.random() * cities.length)];
-    
-    setUser(prev => ({
-      ...prev,
-      details: {
-        ...prev.details,
-        address: {
-          ...prev.details.address,
-          city: randomCity
-        }
-      }
-    }));
-  };
-
+  // 添加新待办事项
   const addTodo = () => {
-    const newTodo = {
-      id: Date.now(),
-      text: `New Todo ${todos.length + 1}`,
-      completed: false,
-    };
-    setTodos(prev => [...prev, newTodo]);
+    if (todoList.newTodo.trim()) {
+      todoList.todos = [
+        ...todoList.todos,
+        {
+          id: Date.now(),
+          text: todoList.newTodo,
+          completed: false
+        }
+      ];
+      todoList.newTodo = '';
+    }
   };
 
+  // 切换待办事项完成状态
   const toggleTodo = (id: number) => {
-    setTodos(prev =>
-      prev.map(todo =>
-        todo.id === id ? { ...todo, completed: !todo.completed } : todo
-      )
+    todoList.todos = todoList.todos.map(todo =>
+      todo.id === id ? { ...todo, completed: !todo.completed } : todo
     );
   };
 
-  const toggleTheme = () => {
-    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
+  // 删除待办事项
+  const removeTodo = (id: number) => {
+    todoList.todos = todoList.todos.filter(todo => todo.id !== id);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    const [section, field] = name.split('.');
-    
-    setFormData(prev => ({
-      ...prev,
-      [section]: {
-        ...prev[section as keyof typeof prev],
-        [field]: value
-      }
-    }));
+  // 清空已完成
+  const clearCompleted = () => {
+    todoList.todos = todoList.todos.filter(todo => !todo.completed);
+  };
+
+  const exampleCode = `// 创建响应式数组
+const todoList = toProxy({
+  todos: [
+    { id: 1, text: '学习 React', completed: false },
+    { id: 2, text: '学习 TypeScript', completed: true },
+    { id: 3, text: '学习 Deep Watcher', completed: false }
+  ],
+  newTodo: ''
+});
+
+function TodoExample() {
+  // 监听数组和计算属性
+  const [todos] = useProxyWatch(todoList, 'todos', todoList.todos);
+  const [completedCount] = useProxyWatch(
+    todoList,
+    'todos',
+    todoList.todos.filter(todo => todo.completed).length
+  );
+
+  // 添加新待办事项
+  const addTodo = () => {
+    if (todoList.newTodo.trim()) {
+      todoList.todos = [
+        ...todoList.todos,
+        {
+          id: Date.now(),
+          text: todoList.newTodo,
+          completed: false
+        }
+      ];
+      todoList.newTodo = '';
+    }
+  };
+
+  // 切换待办事项状态
+  const toggleTodo = (id) => {
+    todoList.todos = todoList.todos.map(todo =>
+      todo.id === id ? { ...todo, completed: !todo.completed } : todo
+    );
+  };
+
+  // 删除待办事项
+  const removeTodo = (id) => {
+    todoList.todos = todoList.todos.filter(todo => todo.id !== id);
+  };
+
+  // 清空已完成
+  const clearCompleted = () => {
+    todoList.todos = todoList.todos.filter(todo => !todo.completed);
   };
 
   return (
+    <div>
+      <div>
+        <input
+          value={todoList.newTodo}
+          onChange={(e) => todoList.newTodo = e.target.value}
+          onKeyPress={(e) => e.key === 'Enter' && addTodo()}
+          placeholder="输入待办事项"
+        />
+        <button onClick={addTodo}>添加</button>
+      </div>
+      <div>已完成: {completedCount} / {todos.length}</div>
+      <ul>
+        {todos.map(todo => (
+          <li key={todo.id}>
+            <input
+              type="checkbox"
+              checked={todo.completed}
+              onChange={() => toggleTodo(todo.id)}
+            />
+            <span style={{ textDecoration: todo.completed ? 'line-through' : 'none' }}>
+              {todo.text}
+            </span>
+            <button onClick={() => removeTodo(todo.id)}>删除</button>
+          </li>
+        ))}
+      </ul>
+      <button onClick={clearCompleted}>清除已完成</button>
+    </div>
+  );
+}`;
+
+  return (
+    <div className="example" style={{ marginTop: '20px' }}>
+      <h3>2. 待办事项 (数组监听)</h3>
+      <div className="description" style={{ marginBottom: '15px' }}>
+        这个示例展示了如何监听和操作响应式数组。
+        支持添加、删除、切换完成状态和清空已完成项。
+      </div>
+      <CodeBlock code={exampleCode} />
+      <div style={{ margin: '10px 0' }}>
+        <input
+          type="text"
+          value={newTodo}
+          onChange={(e) => todoList.newTodo = e.target.value}
+          onKeyPress={(e) => e.key === 'Enter' && addTodo()}
+          placeholder="输入待办事项"
+          style={{ marginRight: '10px', padding: '5px' }}
+        />
+        <button 
+          onClick={addTodo}
+          style={{ padding: '5px 10px' }}
+        >
+          添加
+        </button>
+      </div>
+      <div style={{ margin: '10px 0' }}>
+        已完成: <strong>{completedCount} / {todos.length}</strong>
+      </div>
+      <ul style={{ listStyle: 'none', padding: 0 }}>
+        {todos.map((todo: any) => (
+          <li 
+            key={todo.id} 
+            style={{ 
+              margin: '5px 0',
+              padding: '5px',
+              backgroundColor: todo.completed ? '#f0f0f0' : 'transparent',
+              borderRadius: '3px'
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={todo.completed}
+              onChange={() => toggleTodo(todo.id)}
+              style={{ marginRight: '10px' }}
+            />
+            <span 
+              style={{ 
+                textDecoration: todo.completed ? 'line-through' : 'none',
+                color: todo.completed ? '#888' : '#333'
+              }}
+            >
+              {todo.text}
+            </span>
+            <button 
+              onClick={() => removeTodo(todo.id)}
+              style={{
+                marginLeft: '10px',
+                fontSize: '12px',
+                color: '#ff4d4f',
+                background: 'none',
+                border: '1px solid #ffa39e',
+                borderRadius: '2px',
+                cursor: 'pointer'
+              }}
+            >
+              删除
+            </button>
+          </li>
+        ))}
+      </ul>
+      {completedCount > 0 && (
+        <button 
+          onClick={clearCompleted}
+          style={{
+            marginTop: '10px',
+            padding: '3px 8px',
+            fontSize: '12px',
+            color: '#666',
+            background: 'none',
+            border: '1px solid #d9d9d9',
+            borderRadius: '2px',
+            cursor: 'pointer'
+          }}
+        >
+          清除已完成 ({completedCount})
+        </button>
+      )}
+    </div>
+  );
+}
+
+/**
+ * 演示：监听多层嵌套对象变化
+ */
+function NestedObjectExample() {
+  const [nestedValue] = useProxyWatch(nestedObj, 'a.b.c', nestedObj.a.b.c);
+  const [inputValue, setInputValue] = React.useState('3');
+
+  const updateNestedValue = () => {
+    const numValue = Number(inputValue);
+    if (!isNaN(numValue)) {
+      nestedObj.a.b.c = numValue;
+    }
+  };
+
+  const exampleCode = `// 创建多层嵌套的响应式对象
+const nestedObj = toProxy({
+  a: {
+    b: {
+      c: 3
+    }
+  }
+});
+
+function NestedObjectExample() {
+  // 监听嵌套属性变化
+  const [nestedValue] = useProxyWatch(nestedObj, 'a.b.c', nestedObj.a.b.c);
+  
+  // 更新嵌套属性
+  const updateValue = () => {
+    nestedObj.a.b.c = 5; // 可以直接修改深层属性
+  };
+
+  return (
+    <div>
+      <div>当前值: {nestedValue}</div>
+      <button onClick={updateValue}>修改为5</button>
+    </div>
+  );
+}`;
+
+  return (
+    <div className="example" style={{ marginTop: '20px' }}>
+      <h3>3. 多层嵌套对象</h3>
+      <div className="description" style={{ marginBottom: '15px' }}>
+        这个示例展示了如何监听和修改多层嵌套对象的属性。
+      </div>
+      <CodeBlock code={exampleCode} />
+      <div style={{ marginTop: '10px' }}>
+        <div>当前值: a.b.c = {nestedValue}</div>
+        <div style={{ marginTop: '10px' }}>
+          <input
+            type="number"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            style={{ marginRight: '10px' }}
+          />
+          <button onClick={updateNestedValue}>更新值</button>
+        </div>
+        <button 
+          onClick={() => nestedObj.a.b.c++}
+          style={{ marginTop: '10px', display: 'block' }}
+        >
+          值 +1
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// 主示例组件
+function UseProxyWatchExample() {
+  return (
+    <div>
+      <CounterExample />
+      <TodoExample />
+      <NestedObjectExample />
+    </div>
+  );
+}
+
+// 主应用组件
+const App: React.FC = () => {
+  return (
     <div className="app">
-      <h1>Deep Watcher React Example</h1>
-      
-      <section className="example">
-        <h2>1. Watching Object Properties</h2>
-        <div className="card">
-          <p>User: {user.name}</p>
-          <p>Email: {user.details.email}</p>
-          <p>Location: {user.details.address.city}, {user.details.address.country}</p>
-          <button onClick={updateUserCity}>Change City</button>
-          <p className="hint">Check browser console for change logs</p>
-        </div>
-      </section>
-
-      <section className="example">
-        <h2>2. Watching Array Operations</h2>
-        <div className="card">
-          <button onClick={addTodo}>Add Todo</button>
-          <ul>
-            {todos.map(todo => (
-              <li key={todo.id}>
-                <input
-                  type="checkbox"
-                  checked={todo.completed}
-                  onChange={() => toggleTodo(todo.id)}
-                />
-                <span style={{ textDecoration: todo.completed ? 'line-through' : 'none' }}>
-                  {todo.text}
-                </span>
-              </li>
-            ))}
-          </ul>
-          <p className="hint">Check browser console for change logs</p>
-        </div>
-      </section>
-
-      <section className="example">
-        <h2>3. Using useProxyWatch Hook</h2>
-        <div className="card">
-          <p>Current theme: {theme}</p>
-          <button onClick={toggleTheme}>Toggle Theme</button>
-          <div className="log">
-            <h4>Theme Change Log:</h4>
-            {themeLog.map((log, i) => (
-              <div key={i}>{log}</div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="example">
-        <h2>4. Form Field Watching</h2>
-        <div className="card">
-          <div className="form-group">
-            <label>First Name:</label>
-            <input
-              type="text"
-              name="personal.firstName"
-              value={formData.personal.firstName}
-              onChange={handleInputChange}
-            />
-          </div>
-          <div className="form-group">
-            <label>Last Name:</label>
-            <input
-              type="text"
-              name="personal.lastName"
-              value={formData.personal.lastName}
-              onChange={handleInputChange}
-            />
-          </div>
-          <div className="log">
-            <h4>Change Log:</h4>
-            {formLog.map((log, i) => (
-              <div key={i}>{log}</div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <UseProxyWatchExample />
     </div>
   );
 };

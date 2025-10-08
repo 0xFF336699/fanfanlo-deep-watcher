@@ -1,6 +1,6 @@
 {
   "name": "fanfanlo-deep-watcher",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A utility for deep watching objects and properties.",
   "main": "dist/index.js",
   "module": "dist/index.js",

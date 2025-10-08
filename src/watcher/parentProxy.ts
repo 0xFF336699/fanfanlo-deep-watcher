@@ -1,8 +1,7 @@
 import _ from "lodash"
 import { listenAnyWildcard } from "../dispatcher"
 import { proxyUtils } from "./proxyUtils"
-import { getProxyObject, IProxyObject, isProxy, toProxy, getProxyWatchRealTarget } from "./proxyWatch"
-// import { objectCountUtils } from "../utils"
+import { getProxyObject, IProxyObject, toProxy, getProxyWatchRealTarget } from "./proxyWatch"
 interface IParentProxyInfo<T>{
     parent?:any
     target:T
@@ -16,13 +15,7 @@ const objectMap = new WeakMap<object, IParentProxyInfo<any>>()
 
 function getParentProxyObject(parent:object, options?:IParentProxyOptions){
     proxyUtils.pauseProxy()
-    // const proxyInfo = isProxy(parent)
-    // const target = proxyInfo?.target || parent
     const target = getProxyWatchRealTarget(parent)
-
-    // console.log('希望不要使proxy', target)
-    // console.log('proxy info is', proxyInfo)
-    // console.log('kkkkkkkkkkk', Object.keys(target))
     // 是否需要脱壳得持续观察一下需求
     let proxyObject = (objectMap.get(target)) as IParentProxyInfo<any>
     if(!proxyObject){
@@ -41,14 +34,8 @@ function getParentProxyObject(parent:object, options?:IParentProxyOptions){
                 const newProxyObject = getParentProxyObject(value, options)
                 newProxyObject.parent = target
             }
-            // console.log('watchProxy changed', prop, value, old, target)
         })
         proxyObject.unwatch = unsub
-        // console.log('set proxyObject target', objectCountUtils.getObjectCount(target),target)
-        // console.log('set proxyObject proxy', objectCountUtils.getObjectCount(watchProxy.proxy),watchProxy.proxy)
-        // if(objectCountUtils.getObjectCount(target) == objectCountUtils.getObjectCount(proxyObject.watchProxy.proxy)){
-        //     throw new Error('proxy object count is same')
-        // }
         objectMap.set(target, proxyObject)
     }
     loopChildren(target, options)

@@ -45,7 +45,6 @@ export function watchUpdates<T extends object, U>(target: T, onUpdate:OnUpdate, 
 
 function createOnUpdateFn<T extends object>(target:T, onUpdate:OnUpdate, unsubMap:UnsubscriptMap, watchChain:string[], conf?:IWatchUpdatesConfig<T>){
     return (prop:any, now:T[keyof T], old:T[keyof T])=>{
-        // console.log('ttttttttttttt arget=', target, 'prop=', prop, 'now=', now, 'old=', old)
         if(!checkIsInWatch(prop, target, conf))return
         if(_.isObject(old)){
             unsubMap.get(old)?.()

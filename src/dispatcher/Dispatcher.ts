@@ -11,7 +11,6 @@ interface IHandlerData{
 
 interface IHandlerDataFindResult{
     type:EventType
-    // handler:IHandler
     handlers?:IHandlerData[]
     index:number
     handlerData?:IHandlerData
