@@ -1,0 +1,16 @@
+# 忽略不需要发布的文件
+node_modules/
+examples/
+*.log
+.DS_Store
+.editorconfig
+.gitignore
+.travis.yml
+.vscode/
+coverage/
+*.md
+!README.md
+*.tsbuildinfo
+
+# 包含 dist 目录
+!dist/
