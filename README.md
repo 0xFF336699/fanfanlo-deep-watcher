@@ -7,9 +7,9 @@
 使用 npm 或 yarn 安装：
 
 ```bash
-npm install github:yourusername/deep-watcher
+npm install fanfanlo-deep-watcher
 # 或者
-yarn add github:yourusername/deep-watcher
+yarn add fanfanlo-deep-watcher
 ```
 
 ## 使用方法
@@ -17,7 +17,7 @@ yarn add github:yourusername/deep-watcher
 ### 基本用法
 
 ```typescript
-import { proxyWatch, useProxyWatch } from 'deep-watcher';
+import { proxyWatch, useProxyWatch } from 'fanfanlo-deep-watcher';
 
 // 创建一个可监听的对象
 const state = proxyWatch({
