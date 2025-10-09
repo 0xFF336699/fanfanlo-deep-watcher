@@ -1,16 +1,20 @@
 import { PropertiesChain, toProxy, useProxyWatch, useProxyWatchUpdates } from "fanfanlo-deep-watcher"
 import { Code } from "src/components/Code"
-function Title(){
-    return <div><h3>数组成员添加删除</h3></div>
+function Title() {
+    return <div><h3>Add and Remove Array Elements</h3></div>;
 }
-function Explain(){
-    return <div>
+
+function Explain() {
+    return (
         <div>
-            <div>可以侦听数组成员变化</div>
-            <div>也可以改变数组成员的属性</div>
+            <div>
+                <div>You can listen for changes in array elements</div>
+                <div>You can also modify the properties of array elements</div>
+            </div>
         </div>
-    </div>
+    );
 }
+
 
 const code = `
 interface IFriend{

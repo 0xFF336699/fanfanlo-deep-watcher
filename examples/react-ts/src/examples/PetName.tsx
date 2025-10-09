@@ -1,23 +1,27 @@
 import { toProxy, useProxyWatch } from "fanfanlo-deep-watcher"
 
-function Title(){
-    return <div><h3>链式属性侦听变化</h3></div>
+function Title() {
+    return <div><h3>Chained Property Change Listening</h3></div>;
 }
-function Explain(){
-    return <div>
+
+function Explain() {
+    return (
         <div>
-            可以侦听属性的子级，例如侦听 user 的 pet.name 的变化，即使 pet 未定义也可以预先侦听。
-            
+            <div>
+                You can listen to changes in sub-properties, for example, listen to changes in <code>user.pet.name</code>, 
+                even if <code>pet</code> is not yet defined.
+            </div>
+            <div>
+                Two key features:
+            </div>
+            <div>
+                1. You can listen to sub-properties, such as <code>user.pet.name</code>.<br/>
+                2. You can pre-listen even when the <code>pet</code> property is undefined.
+            </div>
         </div>
-        <div>
-            两个功能点
-        </div>
-        <div>
-            1. 可以侦听属性的子级，例如侦听 user 的 pet.name 的变化。
-            2. 即使 pet 属性未定义也可以预先侦听。
-        </div>
-    </div>
+    );
 }
+
 
 const code = `
 interface User {
@@ -38,7 +42,7 @@ function Rename(){
     return(
         <div>
             <input type="text" defaultValue={user.pet?.name || ""} onChange={(e)=>user.pet = {name: e.target.value}}/>
-            <span>请输入宠物名</span>
+            <span>Input pet's name</span>
         </div>
     )
 }
@@ -82,7 +86,7 @@ function Rename(){
     return(
         <div>
             <input type="text" defaultValue={user.pet?.name || ""} onChange={(e)=>user.pet = {name: e.target.value}}/>
-            <span> 请输入宠物名</span>
+            <span> Input pet's name</span>
         </div>
     )
 }
