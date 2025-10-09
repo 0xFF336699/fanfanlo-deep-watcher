@@ -1,25 +1,33 @@
 # Deep Watcher
 
-一个用于深度监听对象和属性的工具库，特别适用于 React 应用。
+A utility library for deep watching objects and properties, with first-class React support.
 
-## 安装
+## Features
 
-使用 npm 或 yarn 安装：
+- 🔍 Deep object property watching
+- ⚡ React hooks integration
+- 🚀 Lightweight and performant
+- 🔄 Automatic dependency tracking
+- 🛠️ TypeScript support
+
+## Installation
+
+Install with npm or yarn:
 
 ```bash
 npm install fanfanlo-deep-watcher
-# 或者
+# or
 yarn add fanfanlo-deep-watcher
 ```
 
-## 使用方法
+## Basic Usage
 
-### 基本用法
+### Watching Object Properties
 
 ```typescript
 import { proxyWatch, useProxyWatch } from 'fanfanlo-deep-watcher';
 
-// 创建一个可监听的对象
+// Create a watchable object
 const state = proxyWatch({
   user: {
     name: 'John',
@@ -31,12 +39,15 @@ const state = proxyWatch({
   }
 });
 
-// 监听属性变化
+// Watch for property changes
 state.user.$watch('name', (newValue, oldValue) => {
   console.log(`Name changed from ${oldValue} to ${newValue}`);
 });
 
-// 在 React 组件中使用
+### Using with React
+
+```typescript
+// In your React component
 function UserProfile() {
   const [user] = useProxyWatch(state, 'user');
   
@@ -50,31 +61,66 @@ function UserProfile() {
 }
 ```
 
-## API 文档
+## Advanced Usage
 
-### `proxyWatch(target: T): T`
+### Watching Nested Properties
 
-创建一个可监听的对象。
+```typescript
+// Watch nested property changes
+state.user.$watch('address.city', (newCity, oldCity) => {
+  console.log(`User moved from ${oldCity} to ${newCity}`);
+});
 
-### `useProxyWatch(proxy: T, path: string): [T, () => void]`
+// Later in your code
+state.user.address.city = 'San Francisco'; // This will trigger the watcher
+```
 
-React Hook，用于在组件中监听代理对象的变化。
+### React Hook Example
 
-### `useWatch(dispatcher, property, defaultValue?, updateName?): [value, unwatch]`
+```typescript
+import { useProxyWatch } from 'fanfanlo-deep-watcher';
 
-更底层的 React Hook，用于监听特定属性的变化。
+function Counter() {
+  const [count, setCount] = useProxyWatch(state, 'counter', 0);
+  
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <button onClick={() => setCount(count + 1)}>Increment</button>
+    </div>
+  );
+}
+```
 
-## 示例
+## API Reference
 
-查看 `examples/react-ts` 目录中的完整示例。
+### `proxyWatch<T>(target: T): T`
 
-## 开发
+Creates a proxy that enables deep watching on the target object.
 
-1. 克隆仓库
-2. 安装依赖：`npm install`
-3. 构建：`npm run build`
-4. 运行测试：`npm test`
+### `useProxyWatch<T, K extends keyof T>(target: T, property: K, defaultValue?: T[K]): [T[K], (value: T[K]) => void]`
 
-## 许可证
+React hook to watch and update a property in a reactive object.
+
+## TypeScript Support
+
+The library includes TypeScript type definitions, providing full type checking and autocompletion in your IDE.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## Examples
+
+Check out the complete examples in the `examples/react-ts` directory.
+
+## Development
+
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Build the project: `npm run build`
+4. Run tests: `npm test`
+
+## License
 
 MIT
